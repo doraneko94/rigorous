@@ -1,17 +1,19 @@
-use libc::{c_int, c_double, c_float};
+use libc::{c_int};
 use ndarray::*;
 
+const FE_TONEAREST: c_int = 0x000;
+#[cfg(feature = "vc")]
 const FE_DOWNWARD: c_int = 0x100;
+#[cfg(feature = "vc")]
 const FE_UPWARD : c_int = 0x200;
 
-extern {
-    // pub static fe_downward: c_int;
-    fn fegetround() -> c_int;
-    fn fesetround(rdir: c_int) -> c_int;
-}
+#[cfg(not(feature = "vc"))]
+const FE_DOWNWARD: c_int = 0x400;
+#[cfg(not(feature = "vc"))]
+const FE_UPWARD : c_int = 0x800;
 
-fn print_typename<T>(_: T) {
-    println!("{}", std::any::type_name::<T>());
+extern {
+    fn fesetround(rdir: c_int) -> c_int;
 }
 
 fn main() {
