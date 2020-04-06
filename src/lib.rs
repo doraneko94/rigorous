@@ -1,6 +1,7 @@
 use std::ops::{Add, Sub, Mul, Div};
 use std::fmt::Debug;
 use std::str::FromStr;
+use std::string::ToString;
 use std::ptr;
 use libc::{c_int};
 use num_traits::float::Float;
@@ -54,16 +55,16 @@ fn setround(r_dir: c_int) {
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
-pub struct Interval<F: Float + Debug + FromStr> {
+pub struct Interval<F: Float + Debug + FromStr + ToString> {
     pub inf: F,
     pub sup: F,
 }
 
-impl<F: Float + Debug + FromStr> Interval<F>{
+impl<F: Float + Debug + FromStr + ToString> Interval<F>{
     pub fn bet_str(si: &str, ss: &str) -> Self {
-        let mut inf = Zero::zero();
+        let mut inf: F = Zero::zero();
         let p = &mut inf as *mut F;
-        let mut sup = Zero::zero();
+        let mut sup: F = Zero::zero();
         let q = &mut sup as *mut F;
         unsafe {
             setround(FE_DOWNWARD);
@@ -81,6 +82,19 @@ impl<F: Float + Debug + FromStr> Interval<F>{
         if inf > sup {
             panic!("inf is larger than sup!");
         }
+
+        setround(FE_DOWNWARD);
+        let sis = si.to_string();
+        while inf.to_string() > sis {
+            inf = inf - Float::epsilon();
+        }
+        setround(FE_UPWARD);
+        let sss = ss.to_string();
+        while sup.to_string() < sss {
+            sup = sup + Float::epsilon();
+        }
+        setround(FE_TONEAREST);
+
         Self { inf, sup }
     }
 
@@ -149,7 +163,7 @@ impl<F: Float + Debug + FromStr> Interval<F>{
     }
 }
 
-impl<F: Float + Debug + FromStr> Add for Interval<F> {
+impl<F: Float + Debug + FromStr + ToString> Add for Interval<F> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
@@ -168,7 +182,7 @@ impl<F: Float + Debug + FromStr> Add for Interval<F> {
     }
 }
 
-impl<F: Float + Debug + FromStr> Sub for Interval<F> {
+impl<F: Float + Debug + FromStr + ToString> Sub for Interval<F> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
@@ -187,7 +201,7 @@ impl<F: Float + Debug + FromStr> Sub for Interval<F> {
     }
 }
 
-impl<F: Float + Debug + FromStr> Mul for Interval<F> {
+impl<F: Float + Debug + FromStr + ToString> Mul for Interval<F> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
@@ -207,7 +221,7 @@ impl<F: Float + Debug + FromStr> Mul for Interval<F> {
     }
 }
 
-impl<F: Float + Debug + FromStr> Div for Interval<F> {
+impl<F: Float + Debug + FromStr + ToString> Div for Interval<F> {
     type Output = Self;
 
     fn div(self, other: Self) -> Self {
