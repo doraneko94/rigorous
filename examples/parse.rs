@@ -37,6 +37,11 @@ fn main() {
     println!("inf = {:.25}", i.inf);
     println!("sup = {:.25}\n", i.sup);
 
+    let i: Interval<f64> = Interval::pi();
+    println!("i = Interval::pi() = [inf, sup]");
+    println!("inf = {:.25}", i.inf);
+    println!("sup = {:.25}\n", i.sup);
+
     let e64: f64 = Float::epsilon();
     println!("e64 = {}", e64);
 }
