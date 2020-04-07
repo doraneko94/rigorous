@@ -2,14 +2,16 @@ use rigorous::*;
 use std::ptr;
 use num_traits::identities::{Zero};
 
+
+
 macro_rules! down_up {
     ($func:ident, $name: ident, $val:ident) => {
-        setround(0x100);
+        setround(FE_DOWNWARD);
         let mut tmp = Zero::zero();
         let p = &mut tmp as *mut f64;
         unsafe { ptr::write_volatile(p, $val.$func()); }
         println!("inf.{} = {:.25}", $name, tmp);
-        setround(0x200);
+        setround(FE_UPWARD);
         let mut tmp = Zero::zero();
         let p = &mut tmp as *mut f64;
         unsafe { ptr::write_volatile(p, $val.$func()); }
