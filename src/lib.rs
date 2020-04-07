@@ -7,16 +7,16 @@ use libc::{c_int};
 use num_traits::float::Float;
 use num_traits::identities::{Zero, One};
 
-const FE_TONEAREST: c_int = 0x000;
+pub const FE_TONEAREST: c_int = 0x000;
 #[cfg(feature = "vc")]
-const FE_DOWNWARD: c_int = 0x100;
+pub const FE_DOWNWARD: c_int = 0x100;
 #[cfg(feature = "vc")]
-const FE_UPWARD : c_int = 0x200;
+pub const FE_UPWARD : c_int = 0x200;
 
 #[cfg(not(feature = "vc"))]
-const FE_DOWNWARD: c_int = 0x400;
+pub const FE_DOWNWARD: c_int = 0x400;
 #[cfg(not(feature = "vc"))]
-const FE_UPWARD : c_int = 0x800;
+pub const FE_UPWARD : c_int = 0x800;
 
 macro_rules! volatile {
     ($val:expr, $mode:ident, $t:ty) => {

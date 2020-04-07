@@ -3,14 +3,14 @@ use ndarray::*;
 
 const FE_TONEAREST: c_int = 0x000;
 #[cfg(feature = "vc")]
-pub const FE_DOWNWARD: c_int = 0x100;
+const FE_DOWNWARD: c_int = 0x100;
 #[cfg(feature = "vc")]
 pub const FE_UPWARD : c_int = 0x200;
 
 #[cfg(not(feature = "vc"))]
-pub const FE_DOWNWARD: c_int = 0x400;
+const FE_DOWNWARD: c_int = 0x400;
 #[cfg(not(feature = "vc"))]
-pub const FE_UPWARD : c_int = 0x800;
+const FE_UPWARD : c_int = 0x800;
 
 extern {
     fn fesetround(rdir: c_int) -> c_int;

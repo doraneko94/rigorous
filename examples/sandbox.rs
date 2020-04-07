@@ -2,8 +2,6 @@ use rigorous::*;
 use std::ptr;
 use num_traits::identities::{Zero};
 
-
-
 macro_rules! down_up {
     ($func:ident, $name: ident, $val:ident) => {
         setround(FE_DOWNWARD);
@@ -20,7 +18,7 @@ macro_rules! down_up {
 }
 
 fn main() {
-    let i: Interval<f64> = Interval::from_str("0.1");
+    let i: Interval<f64> = Interval::from_str("-0.1");
     let inf = i.inf;
     let sup = i.sup;
 
