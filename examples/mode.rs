@@ -39,7 +39,7 @@ fn main() {
     let mut tmp: f64 = Zero::zero();
     let p = &mut tmp as *mut f64;
     unsafe {
-        setround(0x300);
+        setround(FE_TOWARDZERO);
         match "0.1".parse::<f64>() {
             Ok(e) => ptr::write_volatile(p, e),
             Err(_) => panic!("parse error!"),
@@ -83,7 +83,7 @@ fn main() {
     let mut tmp: f64 = Zero::zero();
     let p = &mut tmp as *mut f64;
     unsafe {
-        setround(0x300);
+        setround(FE_TOWARDZERO);
         match "-0.1".parse::<f64>() {
             Ok(e) => ptr::write_volatile(p, e),
             Err(_) => panic!("parse error!"),

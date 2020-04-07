@@ -12,11 +12,15 @@ pub const FE_TONEAREST: c_int = 0x000;
 pub const FE_DOWNWARD: c_int = 0x100;
 #[cfg(feature = "vc")]
 pub const FE_UPWARD : c_int = 0x200;
+#[cfg(feature = "vc")]
+pub const FE_TOWARDZERO : c_int = 0x300;
 
 #[cfg(not(feature = "vc"))]
 pub const FE_DOWNWARD: c_int = 0x400;
 #[cfg(not(feature = "vc"))]
 pub const FE_UPWARD : c_int = 0x800;
+#[cfg(not(feature = "vc"))]
+pub const FE_TOWARDZERO : c_int = 0x1200;
 
 macro_rules! volatile {
     ($val:expr, $mode:ident, $t:ty) => {
