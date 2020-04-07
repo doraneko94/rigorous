@@ -25,10 +25,22 @@ pub const FE_TOWARDZERO : c_int = 0xc00;
 macro_rules! volatile {
     ($val:expr, $mode:ident, $t:ty) => {
         {
+            let sign: $t = $val;
+            let r_dir = if sign < Zero::zero() {
+                if $mode == FE_DOWNWARD {
+                    FE_UPWARD
+                } else if $mode == FE_UPWARD {
+                    FE_DOWNWARD
+                } else {
+                    $mode
+                }
+            } else {
+                $mode
+            };
             let mut tmp = Zero::zero();
             let p = &mut tmp as *mut $t;
             unsafe {
-                setround($mode);
+                setround(r_dir);
                 ptr::write_volatile(p, $val);
                 setround(FE_TONEAREST);
             }
@@ -70,35 +82,56 @@ impl<F: Float + Debug + FromStr + ToString> Interval<F>{
         let p = &mut inf as *mut F;
         let mut sup: F = Zero::zero();
         let q = &mut sup as *mut F;
+        let r_inf = match si.parse::<F>() {
+            Ok(e) => { if e < Zero::zero() { FE_UPWARD } else { FE_DOWNWARD } },
+            Err(_) => panic!("inf parse error!"),
+        };
+        let r_sup = match ss.parse::<F>() {
+            Ok(e) => { if e < Zero::zero() { FE_DOWNWARD } else { FE_UPWARD } },
+            Err(_) => panic!("inf parse error!"),
+        };
         unsafe {
-            setround(FE_DOWNWARD);
+            setround(r_inf);
             match si.parse::<F>() {
                 Ok(e) => ptr::write_volatile(p, e),
                 Err(_) => panic!("inf parse error!"),
             };
-            setround(FE_UPWARD);
+            setround(r_sup);
             match ss.parse::<F>() {
                 Ok(e) => ptr::write_volatile(q, e),
                 Err(_) => panic!("sup parse error!"),
             };
             setround(FE_TONEAREST);
         }
-        println!("{:?}", inf);
-        println!("{:?}", sup);
+
         if inf > sup {
             panic!("inf is larger than sup!");
         }
 
-        setround(FE_DOWNWARD);
+        setround(r_inf);
         let sis = si.to_string();
-        while inf.to_string() > sis {
-            inf = inf - Float::epsilon();
+        if r_inf == FE_DOWNWARD {
+            while inf.to_string() > sis {
+                inf = inf - Float::epsilon();
+            }
+        } else {
+            while inf.to_string() < sis {
+                inf = inf - Float::epsilon();
+            }
         }
-        setround(FE_UPWARD);
+        
+        setround(r_sup);
         let sss = ss.to_string();
-        while sup.to_string() < sss {
-            sup = sup + Float::epsilon();
+        if r_sup == FE_UPWARD {
+            while sup.to_string() < sss {
+                sup = sup + Float::epsilon();
+            }
+        } else {
+            while sup.to_string() > sss {
+                sup = sup + Float::epsilon();
+            }
         }
+        
         setround(FE_TONEAREST);
 
         Self { inf, sup }
@@ -166,23 +199,20 @@ impl<F: Float + Debug + FromStr + ToString> Interval<F>{
             ret
         }
     }
+
+    pub fn sqrt(self) -> Self {
+        let inf = volatile!(self.inf.sqrt(), FE_DOWNWARD, F);
+        let sup = volatile!(self.sup.sqrt(), FE_UPWARD, F);
+        Self { inf, sup }
+    }
 }
 
 impl<F: Float + Debug + FromStr + ToString> Add for Interval<F> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        let mut inf = Zero::zero();
-        let p = &mut inf as *mut F;
-        let mut sup = Zero::zero();
-        let q = &mut sup as *mut F;
-        unsafe {
-            setround(FE_DOWNWARD);
-            ptr::write_volatile(p, self.inf + other.inf);
-            setround(FE_UPWARD);
-            ptr::write_volatile(q, self.sup + other.sup);
-            setround(FE_TONEAREST);
-        }
+        let inf = volatile!(self.inf + other.inf, FE_DOWNWARD, F);
+        let sup = volatile!(self.sup + other.sup, FE_UPWARD, F);
         Self { inf, sup }
     }
 }
@@ -191,17 +221,8 @@ impl<F: Float + Debug + FromStr + ToString> Sub for Interval<F> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        let mut inf = Zero::zero();
-        let p = &mut inf as *mut F;
-        let mut sup = Zero::zero();
-        let q = &mut sup as *mut F;
-        unsafe {
-            setround(FE_DOWNWARD);
-            ptr::write_volatile(p, self.inf - other.sup);
-            setround(FE_UPWARD);
-            ptr::write_volatile(q, self.sup - other.inf);
-            setround(FE_TONEAREST);
-        }
+        let inf = volatile!(self.inf - other.sup, FE_DOWNWARD, F);
+        let sup = volatile!(self.sup - other.inf, FE_UPWARD, F);
         Self { inf, sup }
     }
 }
@@ -210,18 +231,9 @@ impl<F: Float + Debug + FromStr + ToString> Mul for Interval<F> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
-        let mut inf = Zero::zero();
-        let p = &mut inf as *mut F;
-        let mut sup = Zero::zero();
-        let q = &mut sup as *mut F;
         let (si, ss, oi, os) = (self.inf, self.sup, other.inf, other.sup);
-        unsafe {
-            setround(FE_DOWNWARD);
-            ptr::write_volatile(p, min(min(si * oi, si * os), min(ss * oi, ss * os)));
-            setround(FE_UPWARD);
-            ptr::write_volatile(q, max(max(si * oi, si * os), max(ss * oi, ss * os)));
-            setround(FE_TONEAREST);
-        }
+        let inf = volatile!(min(min(si * oi, si * os), min(ss * oi, ss * os)), FE_DOWNWARD, F);
+        let sup = volatile!(max(max(si * oi, si * os), max(ss * oi, ss * os)), FE_UPWARD, F);
         Self { inf, sup }
     }
 }
@@ -230,23 +242,10 @@ impl<F: Float + Debug + FromStr + ToString> Div for Interval<F> {
     type Output = Self;
 
     fn div(self, other: Self) -> Self {
-        let mut tinf = Zero::zero();
-        let tp = &mut tinf as *mut F;
-        let mut tsup = Zero::zero();
-        let tq = &mut tsup as *mut F;
-        unsafe {
-            setround(FE_DOWNWARD);
-            let mut one = Zero::zero();
-            let op = &mut one as *mut F;
-            ptr::write_volatile(op, One::one());
-            ptr::write_volatile(tp, one / other.sup);
-            setround(FE_UPWARD);
-            let mut one = Zero::zero();
-            let op = &mut one as *mut F;
-            ptr::write_volatile(op, One::one());
-            ptr::write_volatile(tq, one / other.inf);
-            setround(FE_TONEAREST);
-        }
+        let oinf = volatile!(One::one(), FE_DOWNWARD, F);
+        let tinf = volatile!(oinf / other.sup, FE_DOWNWARD, F);
+        let osup = volatile!(One::one(), FE_UPWARD, F);
+        let tsup = volatile!(osup / other.inf, FE_UPWARD, F);
         let tmp = Self { inf: tinf, sup: tsup };
         self * tmp
     }
