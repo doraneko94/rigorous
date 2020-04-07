@@ -47,7 +47,7 @@ fn min<F: Float>(l: F, r: F) -> F {
     else { l }
 }
 
-fn setround(r_dir: c_int) {
+pub fn setround(r_dir: c_int) {
     let res = unsafe { fesetround(r_dir) };
     if res != 0 {
         panic!("failed to change direction to {}!", r_dir);
@@ -79,6 +79,8 @@ impl<F: Float + Debug + FromStr + ToString> Interval<F>{
             };
             setround(FE_TONEAREST);
         }
+        println!("{:?}", inf);
+        println!("{:?}", sup);
         if inf > sup {
             panic!("inf is larger than sup!");
         }
