@@ -90,4 +90,27 @@ fn main() {
         };
     }
     println!("{:.25}\n", tmp);
+
+    let i1: Interval<f64> = Interval::from_str("-1");
+    let i10: Interval<f64> = Interval::from_str("10");
+    let inf1 = i1.inf;
+    let inf10 = i10.inf;
+
+    let mut tmp: f64 = Zero::zero();
+    let p = &mut tmp as *mut f64;
+    unsafe {
+        setround(FE_DOWNWARD);
+        ptr::write_volatile(p, inf1 / inf10);
+    }
+    println!("{:.25}\n", tmp);
+
+    let mut tmp: f64 = Zero::zero();
+    let p = &mut tmp as *mut f64;
+    unsafe {
+        setround(FE_UPWARD);
+        ptr::write_volatile(p, inf1 / inf10);
+    }
+    println!("{:.25}\n", tmp);
+
+    println!("{:?}", i1 / i10 + i1 / i10);
 }

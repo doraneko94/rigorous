@@ -25,22 +25,10 @@ pub const FE_TOWARDZERO : c_int = 0xc00;
 macro_rules! volatile {
     ($val:expr, $mode:ident, $t:ty) => {
         {
-            let sign: $t = $val;
-            let r_dir = if sign < Zero::zero() {
-                if $mode == FE_DOWNWARD {
-                    FE_UPWARD
-                } else if $mode == FE_UPWARD {
-                    FE_DOWNWARD
-                } else {
-                    $mode
-                }
-            } else {
-                $mode
-            };
             let mut tmp = Zero::zero();
             let p = &mut tmp as *mut $t;
             unsafe {
-                setround(r_dir);
+                setround($mode);
                 ptr::write_volatile(p, $val);
                 setround(FE_TONEAREST);
             }
@@ -101,14 +89,13 @@ impl<F: Float + Debug + FromStr + ToString> Interval<F>{
                 Ok(e) => ptr::write_volatile(q, e),
                 Err(_) => panic!("sup parse error!"),
             };
-            setround(FE_TONEAREST);
         }
 
         if inf > sup {
             panic!("inf is larger than sup!");
         }
 
-        setround(r_inf);
+        setround(FE_DOWNWARD);
         let sis = si.to_string();
         if r_inf == FE_DOWNWARD {
             while inf.to_string() > sis {
@@ -120,7 +107,7 @@ impl<F: Float + Debug + FromStr + ToString> Interval<F>{
             }
         }
         
-        setround(r_sup);
+        setround(FE_UPWARD);
         let sss = ss.to_string();
         if r_sup == FE_UPWARD {
             while sup.to_string() < sss {
